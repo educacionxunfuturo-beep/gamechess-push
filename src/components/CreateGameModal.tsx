@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Coins, Clock, Swords, AlertTriangle, ExternalLink } from 'lucide-react';
+import { Coins, Clock, Swords, AlertTriangle, ExternalLink, Wallet, CreditCard } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -21,6 +21,8 @@ import {
 import { toast } from 'sonner';
 import { useWallet } from '@/hooks/useWallet';
 import { useContract } from '@/hooks/useContract';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
 interface CreateGameModalProps {
   open: boolean;
@@ -28,19 +30,32 @@ interface CreateGameModalProps {
   onCreateGame?: (stake: number, currency: string, timeControl: string, gameId?: string) => void;
 }
 
+type PaymentMethod = 'balance' | 'wallet';
+
 const CreateGameModal = ({ open, onOpenChange, onCreateGame }: CreateGameModalProps) => {
   const [stake, setStake] = useState('0.01');
   const [timeControl, setTimeControl] = useState('10+0');
-  const { isConnected, isBSC, switchToBSC, chainId, getCurrencySymbol } = useWallet();
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('balance');
+  const [isCreating, setIsCreating] = useState(false);
+  
+  const { isConnected: isWalletConnected, isBSC, switchToBSC, chainId, getCurrencySymbol } = useWallet();
   const { createGame, isLoading, isContractDeployed } = useContract();
+  const { isAuthenticated, profile, user, refreshProfile } = useAuth();
 
+  const isConnected = isWalletConnected || isAuthenticated;
   const currency = getCurrencySymbol(chainId);
+  const hasEnoughBalance = profile && parseFloat(stake) <= profile.balance;
 
   const handleSwitchNetwork = async () => {
     const success = await switchToBSC(true);
     if (success) {
       toast.success('Cambiado a BSC Testnet');
     }
+  };
+
+  const getTimeControlSeconds = (tc: string): number => {
+    const minutes = parseInt(tc.split('+')[0]);
+    return minutes * 60;
   };
 
   const handleCreate = async () => {
@@ -51,22 +66,110 @@ const CreateGameModal = ({ open, onOpenChange, onCreateGame }: CreateGameModalPr
     }
 
     if (!isConnected) {
-      toast.error('Conecta tu wallet primero');
+      toast.error('Conecta tu cuenta primero');
       return;
     }
 
-    if (isContractDeployed && isBSC) {
-      // Create game on blockchain
-      const result = await createGame(stake);
-      if (result) {
-        onCreateGame?.(stakeAmount, 'BNB', timeControl, result.gameId);
+    setIsCreating(true);
+
+    try {
+      if (paymentMethod === 'balance') {
+        // Pay from internal balance
+        if (!user || !profile) {
+          toast.error('Debes iniciar sesión');
+          return;
+        }
+
+        if (stakeAmount > profile.balance) {
+          toast.error('Balance insuficiente', {
+            description: 'Recarga tu wallet desde tu perfil',
+          });
+          return;
+        }
+
+        // Create game in database
+        const { data: game, error: gameError } = await supabase
+          .from('games')
+          .insert({
+            creator_id: user.id,
+            stake_amount: stakeAmount,
+            time_control: getTimeControlSeconds(timeControl),
+            status: 'waiting',
+            is_smart_contract: false,
+            creator_paid: true,
+          })
+          .select()
+          .single();
+
+        if (gameError) throw gameError;
+
+        // Deduct from balance
+        const newBalance = profile.balance - stakeAmount;
+        const { error: balanceError } = await supabase
+          .from('profiles')
+          .update({ balance: newBalance })
+          .eq('id', user.id);
+
+        if (balanceError) throw balanceError;
+
+        // Record transaction
+        await supabase.from('transactions').insert({
+          user_id: user.id,
+          type: 'game_stake',
+          amount: stakeAmount,
+          status: 'confirmed',
+        });
+
+        await refreshProfile();
+        
+        onCreateGame?.(stakeAmount, 'BNB', timeControl, game.id);
+        toast.success('¡Partida creada!', {
+          description: 'Esperando oponente...',
+        });
         onOpenChange(false);
+
+      } else {
+        // Pay with wallet (smart contract)
+        if (!isWalletConnected) {
+          toast.error('Conecta tu wallet');
+          return;
+        }
+
+        if (!isBSC) {
+          toast.error('Cambia a BSC primero');
+          return;
+        }
+
+        if (isContractDeployed) {
+          const result = await createGame(stake);
+          if (result) {
+            // Also create in database for tracking
+            if (user) {
+              await supabase.from('games').insert({
+                creator_id: user.id,
+                stake_amount: stakeAmount,
+                time_control: getTimeControlSeconds(timeControl),
+                status: 'waiting',
+                is_smart_contract: true,
+                contract_game_id: result.gameId,
+                creator_paid: true,
+              });
+            }
+            
+            onCreateGame?.(stakeAmount, 'BNB', timeControl, result.gameId);
+            onOpenChange(false);
+          }
+        } else {
+          toast.error('Smart contract no desplegado');
+        }
       }
-    } else {
-      // Fallback to mock for demo
-      onCreateGame?.(stakeAmount, currency, timeControl);
-      toast.success('Partida creada (modo demo)');
-      onOpenChange(false);
+    } catch (error: any) {
+      console.error('Error creating game:', error);
+      toast.error('Error al crear partida', {
+        description: error.message,
+      });
+    } finally {
+      setIsCreating(false);
     }
   };
 
@@ -88,8 +191,40 @@ const CreateGameModal = ({ open, onOpenChange, onCreateGame }: CreateGameModalPr
           animate={{ opacity: 1, y: 0 }}
           className="space-y-4 py-4"
         >
-          {/* Network Warning */}
-          {isConnected && !isBSC && (
+          {/* Payment Method Selection */}
+          <div className="space-y-2">
+            <Label>Método de pago</Label>
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                type="button"
+                variant={paymentMethod === 'balance' ? 'default' : 'outline'}
+                className="h-auto py-3 flex flex-col items-center gap-1"
+                onClick={() => setPaymentMethod('balance')}
+              >
+                <CreditCard className="w-5 h-5" />
+                <span className="text-xs">Balance App</span>
+                <span className="text-[10px] text-muted-foreground">
+                  {profile?.balance?.toFixed(4) || '0.00'} BNB
+                </span>
+              </Button>
+              <Button
+                type="button"
+                variant={paymentMethod === 'wallet' ? 'default' : 'outline'}
+                className="h-auto py-3 flex flex-col items-center gap-1"
+                onClick={() => setPaymentMethod('wallet')}
+                disabled={!isWalletConnected}
+              >
+                <Wallet className="w-5 h-5" />
+                <span className="text-xs">Wallet Crypto</span>
+                <span className="text-[10px] text-muted-foreground">
+                  {isWalletConnected ? 'Smart Contract' : 'No conectada'}
+                </span>
+              </Button>
+            </div>
+          </div>
+
+          {/* Network Warning for wallet payment */}
+          {paymentMethod === 'wallet' && isWalletConnected && !isBSC && (
             <div className="flex items-start gap-3 p-3 rounded-lg bg-warning/10 border border-warning/30">
               <AlertTriangle className="w-5 h-5 text-warning shrink-0 mt-0.5" />
               <div className="flex-1">
@@ -104,8 +239,21 @@ const CreateGameModal = ({ open, onOpenChange, onCreateGame }: CreateGameModalPr
             </div>
           )}
 
-          {/* Contract Status */}
-          {isConnected && isBSC && (
+          {/* Balance warning */}
+          {paymentMethod === 'balance' && !hasEnoughBalance && parseFloat(stake) > 0 && (
+            <div className="flex items-start gap-3 p-3 rounded-lg bg-destructive/10 border border-destructive/30">
+              <AlertTriangle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-destructive">Balance insuficiente</p>
+                <p className="text-xs text-muted-foreground">
+                  Tienes {profile?.balance?.toFixed(4) || '0'} BNB. Recarga desde tu perfil.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Contract Status for wallet */}
+          {paymentMethod === 'wallet' && isWalletConnected && isBSC && (
             <div className={`flex items-center gap-2 p-2 rounded-lg text-xs ${
               isContractDeployed 
                 ? 'bg-success/10 text-success' 
@@ -114,7 +262,7 @@ const CreateGameModal = ({ open, onOpenChange, onCreateGame }: CreateGameModalPr
               <div className={`w-2 h-2 rounded-full ${isContractDeployed ? 'bg-success' : 'bg-muted-foreground'}`} />
               {isContractDeployed 
                 ? 'Smart Contract conectado' 
-                : 'Modo demo (contrato no desplegado)'
+                : 'Contrato no desplegado'
               }
             </div>
           )}
@@ -136,7 +284,7 @@ const CreateGameModal = ({ open, onOpenChange, onCreateGame }: CreateGameModalPr
                 className="flex-1 bg-secondary border-border"
               />
               <div className="flex items-center justify-center px-4 bg-secondary border border-border rounded-md text-sm font-medium">
-                {isBSC ? 'BNB' : currency}
+                BNB
               </div>
             </div>
             <p className="text-xs text-muted-foreground">
@@ -171,19 +319,19 @@ const CreateGameModal = ({ open, onOpenChange, onCreateGame }: CreateGameModalPr
             <div className="flex justify-between text-sm">
               <span>Tu apuesta:</span>
               <span className="font-semibold text-primary">
-                {stake} {isBSC ? 'BNB' : currency}
+                {stake} BNB
               </span>
             </div>
             <div className="flex justify-between text-sm">
               <span>Posible ganancia:</span>
               <span className="font-semibold text-success">
-                {(parseFloat(stake || '0') * 1.95).toFixed(4)} {isBSC ? 'BNB' : currency}
+                {(parseFloat(stake || '0') * 1.95).toFixed(4)} BNB
               </span>
             </div>
             <div className="flex justify-between text-sm">
-              <span>Red:</span>
+              <span>Método:</span>
               <span className="font-mono">
-                {isBSC ? 'BSC' : 'Demo'}
+                {paymentMethod === 'balance' ? 'Balance App' : 'Smart Contract'}
               </span>
             </div>
           </div>
@@ -191,12 +339,18 @@ const CreateGameModal = ({ open, onOpenChange, onCreateGame }: CreateGameModalPr
           <Button 
             onClick={handleCreate} 
             className="w-full btn-primary-glow bg-primary"
-            disabled={isLoading || !isConnected}
+            disabled={
+              isLoading || 
+              isCreating || 
+              !isConnected || 
+              (paymentMethod === 'balance' && !hasEnoughBalance) ||
+              (paymentMethod === 'wallet' && (!isWalletConnected || !isBSC || !isContractDeployed))
+            }
           >
-            {isLoading ? 'Procesando...' : 'Crear Partida'}
+            {isLoading || isCreating ? 'Procesando...' : 'Crear Partida'}
           </Button>
 
-          {isBSC && isContractDeployed && (
+          {paymentMethod === 'wallet' && isBSC && isContractDeployed && (
             <p className="text-[10px] text-center text-muted-foreground flex items-center justify-center gap-1">
               <ExternalLink className="w-3 h-3" />
               La transacción se ejecutará en BSC

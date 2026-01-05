@@ -14,7 +14,168 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      games: {
+        Row: {
+          contract_game_id: string | null
+          created_at: string
+          creator_id: string
+          creator_paid: boolean
+          ended_at: string | null
+          id: string
+          is_smart_contract: boolean
+          opponent_id: string | null
+          opponent_paid: boolean
+          stake_amount: number
+          started_at: string | null
+          status: string
+          time_control: number
+          winner_id: string | null
+        }
+        Insert: {
+          contract_game_id?: string | null
+          created_at?: string
+          creator_id: string
+          creator_paid?: boolean
+          ended_at?: string | null
+          id?: string
+          is_smart_contract?: boolean
+          opponent_id?: string | null
+          opponent_paid?: boolean
+          stake_amount: number
+          started_at?: string | null
+          status?: string
+          time_control?: number
+          winner_id?: string | null
+        }
+        Update: {
+          contract_game_id?: string | null
+          created_at?: string
+          creator_id?: string
+          creator_paid?: boolean
+          ended_at?: string | null
+          id?: string
+          is_smart_contract?: boolean
+          opponent_id?: string | null
+          opponent_paid?: boolean
+          stake_amount?: number
+          started_at?: string | null
+          status?: string
+          time_control?: number
+          winner_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "games_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "games_opponent_id_fkey"
+            columns: ["opponent_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "games_winner_id_fkey"
+            columns: ["winner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          balance: number
+          created_at: string
+          display_name: string | null
+          email: string | null
+          games_played: number
+          games_won: number
+          id: string
+          preferred_wallet: string | null
+          rating: number
+          total_deposited: number
+          total_withdrawn: number
+          updated_at: string
+          wallet_address: string | null
+        }
+        Insert: {
+          balance?: number
+          created_at?: string
+          display_name?: string | null
+          email?: string | null
+          games_played?: number
+          games_won?: number
+          id: string
+          preferred_wallet?: string | null
+          rating?: number
+          total_deposited?: number
+          total_withdrawn?: number
+          updated_at?: string
+          wallet_address?: string | null
+        }
+        Update: {
+          balance?: number
+          created_at?: string
+          display_name?: string | null
+          email?: string | null
+          games_played?: number
+          games_won?: number
+          id?: string
+          preferred_wallet?: string | null
+          rating?: number
+          total_deposited?: number
+          total_withdrawn?: number
+          updated_at?: string
+          wallet_address?: string | null
+        }
+        Relationships: []
+      }
+      transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          status: string
+          tx_hash: string | null
+          type: string
+          user_id: string
+          wallet_address: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          status?: string
+          tx_hash?: string | null
+          type: string
+          user_id: string
+          wallet_address?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          status?: string
+          tx_hash?: string | null
+          type?: string
+          user_id?: string
+          wallet_address?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
