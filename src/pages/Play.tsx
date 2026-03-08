@@ -41,7 +41,7 @@ const Play = () => {
         toast.success('¡Fondos enviados a tu wallet!', { description: `TX: ${txHash.slice(0, 10)}...` });
         // Update total_won in profile
         if (user) {
-          await supabase.rpc('increment_total_won' as any, { user_id: user.id, amount: 0.095 });
+          await (supabase.rpc as any)('increment_total_won', { user_id: user.id, amount: 0.095 });
           await refreshProfile();
         }
       }
