@@ -47,7 +47,7 @@ export const useWallet = () => {
     }
   }, [getProvider]);
 
-  const switchToBSC = useCallback(async (testnet = true): Promise<boolean> => {
+  const switchToBSC = useCallback(async (testnet = false): Promise<boolean> => {
     if (!window.ethereum) return false;
 
     const network = testnet ? BSC_TESTNET : BSC_MAINNET;

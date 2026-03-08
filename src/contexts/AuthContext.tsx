@@ -11,6 +11,8 @@ interface Profile {
   balance_usdt: number;
   total_deposited: number;
   total_withdrawn: number;
+  total_won: number;
+  total_won_usdt: number;
   wallet_address: string | null;
   preferred_wallet: string | null;
   games_played: number;
@@ -55,7 +57,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.error('Error fetching profile:', error);
         return null;
       }
-      return data as Profile;
+      return data as unknown as Profile;
     } catch (error) {
       console.error('Error fetching profile:', error);
       return null;

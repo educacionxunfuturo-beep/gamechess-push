@@ -21,9 +21,9 @@ export const useContract = () => {
   const isContractDeployed = (CONTRACT_ADDRESS as string) !== '0x0000000000000000000000000000000000000000';
 
   const ensureBSCNetwork = useCallback(async (): Promise<boolean> => {
-    const success = await switchToBSC(true);
+    const success = await switchToBSC(false);
     if (!success) {
-      toast.error('Por favor, cambia a la red BSC');
+      toast.error('Por favor, cambia a la red BNB Smart Chain');
       return false;
     }
     return true;

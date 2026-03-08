@@ -8,6 +8,9 @@ import GameTimer from '@/components/GameTimer';
 import StakeDisplay from '@/components/StakeDisplay';
 import type { PieceColor } from '@/lib/chess';
 import { toast } from 'sonner';
+import { useContract } from '@/hooks/useContract';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,12 +28,26 @@ const Play = () => {
   const [isSoundOn, setIsSoundOn] = useState(true);
   const [showResignDialog, setShowResignDialog] = useState(false);
   const [gameResult, setGameResult] = useState<{ winner: PieceColor; reason: string } | null>(null);
+  const { withdraw } = useContract();
+  const { user, refreshProfile } = useAuth();
 
-  const handleGameEnd = (winner: PieceColor) => {
-    setGameResult({
-      winner,
-      reason: 'Jaque mate',
-    });
+  const handleGameEnd = async (winner: PieceColor) => {
+    setGameResult({ winner, reason: 'Jaque mate' });
+
+    // Auto-withdraw from smart contract
+    try {
+      const txHash = await withdraw('USDT');
+      if (txHash) {
+        toast.success('¡Fondos enviados a tu wallet!', { description: `TX: ${txHash.slice(0, 10)}...` });
+        // Update total_won in profile
+        if (user) {
+          await (supabase.rpc as any)('increment_total_won', { user_id: user.id, amount: 0.095 });
+          await refreshProfile();
+        }
+      }
+    } catch {
+      // If no contract balance, that's ok (might be balance-based game)
+    }
   };
 
   const handleResign = () => {

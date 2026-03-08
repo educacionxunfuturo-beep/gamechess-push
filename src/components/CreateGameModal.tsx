@@ -35,7 +35,7 @@ type PaymentMethod = 'balance' | 'wallet';
 
 const CreateGameModal = ({ open, onOpenChange, onCreateGame }: CreateGameModalProps) => {
   const [stake, setStake] = useState('0.01');
-  const [timeControl, setTimeControl] = useState('10+0');
+  const [timeControl, setTimeControl] = useState('10');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('balance');
   const [currency, setCurrency] = useState<CurrencyType>('BNB');
   const [isCreating, setIsCreating] = useState(false);
@@ -49,15 +49,14 @@ const CreateGameModal = ({ open, onOpenChange, onCreateGame }: CreateGameModalPr
   const hasEnoughBalance = parseFloat(stake) <= currentBalance;
 
   const handleSwitchNetwork = async () => {
-    const success = await switchToBSC(true);
+    const success = await switchToBSC(false);
     if (success) {
-      toast.success('Cambiado a BSC Testnet');
+      toast.success('Conectado a BNB Smart Chain');
     }
   };
 
   const getTimeControlSeconds = (tc: string): number => {
-    const minutes = parseInt(tc.split('+')[0]);
-    return minutes * 60;
+    return parseInt(tc) * 60;
   };
 
   const handleCreate = async () => {
@@ -137,7 +136,7 @@ const CreateGameModal = ({ open, onOpenChange, onCreateGame }: CreateGameModalPr
         }
 
         if (!isBSC) {
-          const switched = await switchToBSC(true);
+          const switched = await switchToBSC(false);
           if (!switched) {
             toast.error('Cambia a BSC primero');
             return;
@@ -340,12 +339,11 @@ const CreateGameModal = ({ open, onOpenChange, onCreateGame }: CreateGameModalPr
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="1+0">Bullet 1 min</SelectItem>
-                <SelectItem value="3+0">Blitz 3 min</SelectItem>
-                <SelectItem value="5+0">Blitz 5 min</SelectItem>
-                <SelectItem value="10+0">Rápida 10 min</SelectItem>
-                <SelectItem value="15+10">Rápida 15+10</SelectItem>
-                <SelectItem value="30+0">Clásica 30 min</SelectItem>
+                <SelectItem value="5">5 minutos</SelectItem>
+                <SelectItem value="10">10 minutos</SelectItem>
+                <SelectItem value="15">15 minutos</SelectItem>
+                <SelectItem value="30">30 minutos</SelectItem>
+                <SelectItem value="60">1 hora</SelectItem>
               </SelectContent>
             </Select>
           </div>

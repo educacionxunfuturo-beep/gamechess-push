@@ -66,7 +66,7 @@ export const generateGameId = (creator: string, timestamp: number): string => {
   return keccak256(toUtf8Bytes(`${creator}-${timestamp}-${Math.random()}`));
 };
 
-export const switchToBSC = async (testnet = true): Promise<boolean> => {
+export const switchToBSC = async (testnet = false): Promise<boolean> => {
   if (!window.ethereum) return false;
 
   const network = testnet ? BSC_TESTNET : BSC_MAINNET;
@@ -124,7 +124,7 @@ export const createGameOnChain = async (
 
     let tx;
     if (currency === 'USDT') {
-      const tokenAddress = getTokenAddress(true);
+      const tokenAddress = getTokenAddress(false);
       const amountWei = parseUnits(stakeAmount, 18);
       
       // Approve first
@@ -157,7 +157,7 @@ export const joinGameOnChain = async (
 
     let tx;
     if (currency === 'USDT') {
-      const tokenAddress = getTokenAddress(true);
+      const tokenAddress = getTokenAddress(false);
       await approveToken(tokenAddress, CONTRACT_ADDRESS, stakeAmount, 18);
       tx = await contract.joinGameToken(gameId);
     } else {
@@ -250,7 +250,7 @@ export const depositToPlatform = async (amount: string, currency: CurrencyType =
 
     let tx;
     if (currency === 'USDT') {
-      const tokenAddress = getTokenAddress(true);
+      const tokenAddress = getTokenAddress(false);
       const amountWei = parseUnits(amount, 18);
       await approveToken(tokenAddress, CONTRACT_ADDRESS, amount, 18);
       tx = await contract.depositToken(amountWei);

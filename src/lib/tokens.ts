@@ -17,7 +17,7 @@ export const ERC20_ABI = [
 
 export type CurrencyType = 'BNB' | 'USDT';
 
-export const getTokenAddress = (testnet = true): string => {
+export const getTokenAddress = (testnet = false): string => {
   return testnet ? USDT_BSC_TESTNET : USDT_BSC_MAINNET;
 };
 

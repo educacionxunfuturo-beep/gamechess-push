@@ -14,6 +14,103 @@ export type Database = {
   }
   public: {
     Tables: {
+      friendships: {
+        Row: {
+          created_at: string
+          friend_id: string
+          id: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          friend_id: string
+          id?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          friend_id?: string
+          id?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "friendships_friend_id_fkey"
+            columns: ["friend_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "friendships_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      game_invites: {
+        Row: {
+          created_at: string
+          currency: string
+          from_user_id: string
+          game_id: string | null
+          id: string
+          stake_amount: number
+          status: string
+          time_control: number
+          to_user_id: string
+        }
+        Insert: {
+          created_at?: string
+          currency?: string
+          from_user_id: string
+          game_id?: string | null
+          id?: string
+          stake_amount?: number
+          status?: string
+          time_control?: number
+          to_user_id: string
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          from_user_id?: string
+          game_id?: string | null
+          id?: string
+          stake_amount?: number
+          status?: string
+          time_control?: number
+          to_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_invites_from_user_id_fkey"
+            columns: ["from_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_invites_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_invites_to_user_id_fkey"
+            columns: ["to_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       games: {
         Row: {
           contract_game_id: string | null
@@ -154,6 +251,8 @@ export type Database = {
           rating: number
           total_deposited: number
           total_withdrawn: number
+          total_won: number
+          total_won_usdt: number
           updated_at: string
           wallet_address: string | null
         }
@@ -169,6 +268,8 @@ export type Database = {
           rating?: number
           total_deposited?: number
           total_withdrawn?: number
+          total_won?: number
+          total_won_usdt?: number
           updated_at?: string
           wallet_address?: string | null
         }
@@ -184,6 +285,8 @@ export type Database = {
           rating?: number
           total_deposited?: number
           total_withdrawn?: number
+          total_won?: number
+          total_won_usdt?: number
           updated_at?: string
           wallet_address?: string | null
         }
