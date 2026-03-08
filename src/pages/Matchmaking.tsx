@@ -17,23 +17,22 @@ const Matchmaking = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [searchTime, setSearchTime] = useState(0);
   const [stakeAmount, setStakeAmount] = useState([0.05]);
-  const [timeControl, setTimeControl] = useState('5+0');
+  const [timeControl, setTimeControl] = useState('10');
   const [currency, setCurrency] = useState<CurrencyType>('BNB');
   const [playersInQueue, setPlayersInQueue] = useState(0);
   const [foundMatch, setFoundMatch] = useState<any>(null);
   const [queueEntryId, setQueueEntryId] = useState<string | null>(null);
 
   const timeControls = [
-    { value: '1+0', label: 'Bullet', description: '1 min' },
-    { value: '3+0', label: 'Blitz', description: '3 min' },
-    { value: '5+0', label: 'Blitz', description: '5 min' },
-    { value: '10+0', label: 'Rápido', description: '10 min' },
-    { value: '15+10', label: 'Rápido', description: '15+10' },
+    { value: '5', label: 'Blitz', description: '5 min' },
+    { value: '10', label: 'Rápido', description: '10 min' },
+    { value: '15', label: 'Rápido', description: '15 min' },
+    { value: '30', label: 'Clásica', description: '30 min' },
+    { value: '60', label: 'Larga', description: '1 hora' },
   ];
 
   const getTimeControlSeconds = (tc: string): number => {
-    const parts = tc.split('+');
-    return parseInt(parts[0]) * 60 + (parseInt(parts[1]) || 0);
+    return parseInt(tc) * 60;
   };
 
   // Listen for matches in realtime

@@ -194,7 +194,7 @@ const Profile = () => {
             { label: 'Partidas', value: profile?.games_played?.toString() || '0', icon: History },
             { label: 'Victorias', value: profile?.games_won?.toString() || '0', icon: Trophy },
             { label: 'Rating', value: profile?.rating?.toString() || '1200', icon: TrendingUp },
-            { label: 'Depositado', value: `${(profile?.total_deposited || 0).toFixed(2)}`, icon: Coins },
+            { label: 'Total Ganado', value: `${(profile?.total_won || 0).toFixed(2)}`, icon: Coins },
           ].map((stat) => (
             <div key={stat.label} className="glass-card p-3 flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">

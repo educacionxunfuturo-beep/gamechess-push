@@ -11,6 +11,7 @@ import Matchmaking from "./pages/Matchmaking";
 import Rankings from "./pages/Rankings";
 import Profile from "./pages/Profile";
 import Auth from "./pages/Auth";
+import Friends from "./pages/Friends";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +31,7 @@ const App = () => (
             <Route path="/rankings" element={<Rankings />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/friends" element={<Friends />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

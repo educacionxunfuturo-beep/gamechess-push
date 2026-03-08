@@ -1,4 +1,4 @@
-import { Home, Users, Gamepad2, Trophy, User } from 'lucide-react';
+import { Home, Users, Gamepad2, Trophy, User, UserPlus } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 
@@ -9,6 +9,7 @@ const BottomNav = () => {
     { path: '/', icon: Home, label: 'Inicio' },
     { path: '/lobby', icon: Users, label: 'Lobby' },
     { path: '/matchmaking', icon: Gamepad2, label: 'Jugar' },
+    { path: '/friends', icon: UserPlus, label: 'Amigos' },
     { path: '/rankings', icon: Trophy, label: 'Ranking' },
     { path: '/profile', icon: User, label: 'Perfil' },
   ];
