@@ -31,6 +31,8 @@ def get_cors_allowed_origins() -> List[str]:
         "http://127.0.0.1:10000",
         "http://localhost:5173",
         "http://127.0.0.1:5173",
+        "https://chessbet.pages.dev",
+        "https://chessbett.pages.dev",
     ]
     configured = [
         origin.strip()
