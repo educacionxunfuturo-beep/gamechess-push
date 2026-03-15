@@ -15,9 +15,6 @@ WORKDIR /app/coach-engine
 COPY coach-engine/requirements.txt ./requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Seed the SQLite DB (master games, knowledge units, etc.) so Render starts with data.
-COPY coach-engine/coach.db /app/coach-engine/coach.db
-
 COPY coach-engine /app/coach-engine
 
 EXPOSE 8000
